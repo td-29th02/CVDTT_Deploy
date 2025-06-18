@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Quản lý cafe</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 500px;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+        .custom-alert.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .custom-alert.hide {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="container vh-100 d-flex align-items-center justify-content-center">
+        <div class="row justify-content-center w-100">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h4 class="fw-bold">QUẢN LÝ CAFE</h4>
+                            <p class="text-muted">Đăng nhập vào hệ thống</p>
+                        </div>
+
+                        <form id="loginForm" onsubmit="return handleLogin(event)">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Tài khoản</label>
+                                <input type="text" class="form-control" id="username" name="username"
+                                    placeholder="Nhập tài khoản" required autofocus>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Mật khẩu</label>
+                                <input type="password" class="form-control" id="password" name="password"
+                                    placeholder="Nhập mật khẩu" required>
+                            </div>
+
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary">Đăng nhập</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script>
+        // Improved alert function with animation (same as config page)
+        function showAlert(message, type) {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.custom-alert');
+            existingAlerts.forEach(alert => {
+                alert.classList.add('hide');
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.parentNode.removeChild(alert);
+                    }
+                }, 300);
+            });
+
+            // Create new alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible custom-alert`;
+            
+            // Icon mapping
+            const iconMap = {
+                'success': 'bi-check-circle-fill',
+                'danger': 'bi-exclamation-triangle-fill',
+                'warning': 'bi-exclamation-triangle-fill',
+                'info': 'bi-info-circle-fill'
+            };
+            
+            const icon = iconMap[type] || 'bi-info-circle-fill';
+            
+            alertDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi ${icon} me-2"></i>
+                    <div class="flex-grow-1">${message}</div>
+                    <button type="button" class="btn-close ms-2" aria-label="Close"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+
+            // Show animation
+            setTimeout(() => {
+                alertDiv.classList.add('show');
+            }, 100);
+
+            // Auto hide after 5 seconds
+            const autoHideTimer = setTimeout(() => {
+                hideAlert(alertDiv);
+            }, 5000);
+
+            // Close button handler
+            const closeBtn = alertDiv.querySelector('.btn-close');
+            closeBtn.addEventListener('click', () => {
+                clearTimeout(autoHideTimer);
+                hideAlert(alertDiv);
+            });
+        }
+
+        function hideAlert(alertDiv) {
+            alertDiv.classList.remove('show');
+            alertDiv.classList.add('hide');
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 300);
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    const apiResult = await response.json();
+                    console.log('API Response (response.ok is true):', apiResult);
+                    // Kiểm tra kết quả từ API
+                    if (apiResult.status && apiResult.data) {
+                        // Lưu access token và refresh token
+                        if (apiResult.data.accessToken) {
+                            localStorage.setItem('accessToken', apiResult.data.accessToken);
+                        }
+                        if (apiResult.data.refreshToken) {
+                            localStorage.setItem('refreshToken', apiResult.data.refreshToken);
+                        }
+                        // Lưu username
+                        localStorage.setItem('username', username);
+                        
+                        // Hiển thị thông báo thành công
+                        showAlert('Đăng nhập thành công!', 'success');
+                        
+                        // Chuyển hướng đến trang home sau 1 giây
+                        setTimeout(() => {
+                            window.location.href = '/home';
+                        }, 1000);
+                    } else {
+                        // Sử dụng userMessage từ API nếu có
+                        const errorMessage = apiResult.userMessage || apiResult.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!';
+                        showAlert(errorMessage, 'danger');
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.log('API Response (response.ok is false):', response.status, errorData);
+                    
+                    // Sử dụng userMessage từ API nếu có
+                    const errorMessage = errorData.userMessage || errorData.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!';
+                    showAlert(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra. Vui lòng thử lại sau!', 'danger');
+            }
+
+            return false;
+        }
+    </script>
+</body>
+
+</html>

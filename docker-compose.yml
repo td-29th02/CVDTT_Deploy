@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./cafemanagement
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://host.docker.internal:1433;databaseName=cafe;trustServerCertificate=true
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: Tuandung2004@
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./cafe_frontend
+    ports:
+      - "8081:8081"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
