@@ -5,7 +5,7 @@ FROM eclipse-temurin:24-jdk
 WORKDIR /app
 
 # Sao chép JAR file từ thư mục target vào container
-COPY /target/cafe-0.0.1-SNAPSHOT.jar app.jar
+COPY target/cafe-0.0.1-SNAPSHOT.jar app.jar
 
 # Chạy ứng dụng
 ENTRYPOINT ["java", "-jar", "app.jar"]
